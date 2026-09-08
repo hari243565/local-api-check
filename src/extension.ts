@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { ApiCodeLensProvider, type RequestRef } from './codeLens';
 import { EnvironmentManager } from './environment';
+import { SecretGuard } from './secretGuard';
+import type { SecretFinding } from './secrets';
 import {
   resolveRequest,
   runCheck,
@@ -37,12 +39,25 @@ function getChannel(): vscode.OutputChannel {
 export function activate(context: vscode.ExtensionContext): void {
   const environments = new EnvironmentManager(context);
   const codeLensProvider = new ApiCodeLensProvider();
+  const secretGuard = new SecretGuard(environments);
 
   context.subscriptions.push(
     environments,
     codeLensProvider,
+    secretGuard,
     vscode.languages.registerCodeLensProvider(API_SELECTOR, codeLensProvider),
+    vscode.languages.registerCodeActionsProvider(API_SELECTOR, secretGuard, {
+      providedCodeActionKinds: SecretGuard.providedCodeActionKinds
+    }),
     environments.onDidChange(() => codeLensProvider.refresh())
+  );
+
+  // Scan whatever is already open, so the warning isn't gated on a save.
+  for (const document of vscode.workspace.textDocuments) {
+    secretGuard.scan(document);
+  }
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument((document) => secretGuard.scan(document))
   );
 
   context.subscriptions.push(
@@ -80,6 +95,12 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
     vscode.commands.registerCommand('localApiCheck.selectEnvironment', () =>
       environments.promptToSelect()
+    ),
+    vscode.commands.registerCommand(
+      'localApiCheck.extractSecret',
+      async (args: { uri: string; finding: SecretFinding }) => {
+        await secretGuard.extract(vscode.Uri.parse(args.uri), args.finding);
+      }
     ),
     vscode.commands.registerCommand('localApiCheck.showOutput', () => {
       getChannel().show(true);

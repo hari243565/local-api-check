@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { envNameFromFile, isLocalOnlyEnv, normalizeEnvValues, type EnvVars } from './env';
+import { pickVariableName } from './secrets';
 
 export const ENV_FOLDER = '.api-env';
 const ACTIVE_ENV_KEY = 'localApiCheck.activeEnvironment';
@@ -213,6 +214,54 @@ export class EnvironmentManager implements vscode.Disposable {
       ? `Local API Check — variables from ${ENV_FOLDER}/${active}.json. Click to switch.`
       : `Local API Check — no environment files in ${ENV_FOLDER}/. Click to create one.`;
     this.statusBar.show();
+  }
+
+  /**
+   * Adds a variable to the active environment file, creating the file (and
+   * `.api-env/`) if needed. Existing content and key order are preserved.
+   * Returns the name actually used — it may be suffixed to avoid clobbering a
+   * different value already stored under the preferred name.
+   */
+  async writeVariable(
+    resource: vscode.Uri | undefined,
+    preferredName: string,
+    value: string
+  ): Promise<{ variableName: string; envName: string; uri: vscode.Uri } | undefined> {
+    const folder = this.folderFor(resource);
+    if (!folder) {
+      return undefined;
+    }
+
+    const envName = this.activeName ?? (await this.defaultEnvironmentName()) ?? 'local';
+    const dir = vscode.Uri.joinPath(folder.uri, ENV_FOLDER);
+    const uri = vscode.Uri.joinPath(dir, `${envName}.json`);
+
+    let raw: Record<string, unknown> = {};
+    try {
+      const bytes = await vscode.workspace.fs.readFile(uri);
+      const parsed: unknown = JSON.parse(Buffer.from(bytes).toString('utf8'));
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        raw = parsed as Record<string, unknown>;
+      }
+    } catch {
+      // New or unreadable file — start from an empty object rather than losing
+      // the user's secret. An unparseable file is reported by resolve().
+    }
+
+    const { vars } = normalizeEnvValues(raw);
+    const variableName = pickVariableName(preferredName, vars, value);
+    raw[variableName] = value;
+
+    await vscode.workspace.fs.createDirectory(dir);
+    await vscode.workspace.fs.writeFile(
+      uri,
+      new TextEncoder().encode(`${JSON.stringify(raw, undefined, 2)}\n`)
+    );
+
+    this.cache.clear();
+    await this.updateStatusBar();
+    this.changed.fire();
+    return { variableName, envName, uri };
   }
 
   /**

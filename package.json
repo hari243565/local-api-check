@@ -58,6 +58,11 @@
         "category": "Local API Check"
       },
       {
+        "command": "localApiCheck.extractSecret",
+        "title": "Extract Secret to Environment",
+        "category": "Local API Check"
+      },
+      {
         "command": "localApiCheck.showOutput",
         "title": "Show Output",
         "category": "Local API Check"
@@ -76,6 +81,10 @@
         {
           "command": "localApiCheck.runAllChecksInFile",
           "when": "resourceExtname == .api"
+        },
+        {
+          "command": "localApiCheck.extractSecret",
+          "when": "false"
         }
       ]
     },
@@ -92,6 +101,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Create a starter `.api-env/local.json` (and a `.gitignore` for `*.local.json`) when a project has no `.api-env` folder yet."
+        },
+        "localApiCheck.warnOnHardcodedSecrets": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Warn when a `.api` file appears to contain a hardcoded credential instead of a `{{variable}}`. This is only ever a warning — it never blocks a save or a request."
         }
       }
     }
