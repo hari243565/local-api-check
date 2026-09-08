@@ -1,0 +1,16 @@
+# Sample requests for local-api-check.
+# Click "▶ Send Request" above a block to run it.
+
+### Get a todo
+GET https://jsonplaceholder.typicode.com/todos/1
+Accept: application/json
+
+### Create a post
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+
+{
+  "title": "Test User",
+  "body": "hello from local-api-check",
+  "userId": 1
+}

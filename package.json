@@ -13,14 +13,55 @@
     "Other"
   ],
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:local-api-check",
+    "workspaceContains:**/*.api"
+  ],
   "contributes": {
+    "languages": [
+      {
+        "id": "local-api-check",
+        "aliases": [
+          "API Check",
+          "api"
+        ],
+        "extensions": [
+          ".api"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
     "commands": [
       {
-        "command": "localApiCheck.helloWorld",
-        "title": "Local API Check: Hello World"
+        "command": "localApiCheck.sendRequest",
+        "title": "Send Request",
+        "category": "Local API Check"
+      },
+      {
+        "command": "localApiCheck.showOutput",
+        "title": "Show Output",
+        "category": "Local API Check"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "localApiCheck.sendRequest",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Local API Check",
+      "properties": {
+        "localApiCheck.requestTimeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 1000,
+          "markdownDescription": "How long to wait for a response before giving up, in milliseconds."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -28,8 +69,8 @@
     "watch": "node esbuild.js --watch",
     "package": "npm run check-types && node esbuild.js --production",
     "check-types": "tsc --noEmit",
-    "test": "node --test out-test",
-    "pretest": "tsc -p tsconfig.test.json"
+    "pretest": "tsc -p tsconfig.test.json",
+    "test": "node --test \"./out-test/**/*.test.js\""
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

@@ -5,6 +5,13 @@
     "noEmit": false,
     "sourceMap": false
   },
-  "include": ["src"],
-  "exclude": ["src/extension.ts"]
+  "include": [
+    "src/test",
+    "src/parser.ts",
+    "src/http.ts",
+    "src/format.ts",
+    "src/assert.ts",
+    "src/env.ts",
+    "src/secrets.ts"
+  ]
 }
