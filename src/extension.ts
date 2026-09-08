@@ -3,6 +3,7 @@ import { ApiCodeLensProvider, type RequestRef } from './codeLens';
 import { EnvironmentManager } from './environment';
 import { SecretGuard } from './secretGuard';
 import type { SecretFinding } from './secrets';
+import { ApiTreeDataProvider, revealRequest, type RequestNode } from './treeView';
 import {
   resolveRequest,
   runCheck,
@@ -10,6 +11,14 @@ import {
   runChecksInWorkspace,
   sendAndReport
 } from './runner';
+
+/**
+ * Send/check commands are invoked from a CodeLens (with a RequestRef) and from
+ * the sidebar's inline buttons (with the tree node itself).
+ */
+function toRef(arg: RequestRef | RequestNode): RequestRef {
+  return 'ref' in arg ? arg.ref : arg;
+}
 
 /** The .api document the user is looking at, if any. */
 async function activeApiDocument(): Promise<vscode.TextDocument | undefined> {
@@ -40,11 +49,17 @@ export function activate(context: vscode.ExtensionContext): void {
   const environments = new EnvironmentManager(context);
   const codeLensProvider = new ApiCodeLensProvider();
   const secretGuard = new SecretGuard(environments);
+  const tree = new ApiTreeDataProvider();
 
   context.subscriptions.push(
     environments,
     codeLensProvider,
     secretGuard,
+    tree,
+    vscode.window.createTreeView('localApiCheck.requests', {
+      treeDataProvider: tree,
+      showCollapseAll: true
+    }),
     vscode.languages.registerCodeLensProvider(API_SELECTOR, codeLensProvider),
     vscode.languages.registerCodeActionsProvider(API_SELECTOR, secretGuard, {
       providedCodeActionKinds: SecretGuard.providedCodeActionKinds
@@ -61,16 +76,19 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('localApiCheck.sendRequest', async (ref: RequestRef) => {
-      const resolved = await resolveRequest(ref);
-      if (!resolved) {
-        void vscode.window.showWarningMessage('Local API Check: could not find that request.');
-        return;
+    vscode.commands.registerCommand(
+      'localApiCheck.sendRequest',
+      async (arg: RequestRef | RequestNode) => {
+        const resolved = await resolveRequest(toRef(arg));
+        if (!resolved) {
+          void vscode.window.showWarningMessage('Local API Check: could not find that request.');
+          return;
+        }
+        await sendAndReport(resolved.document, resolved.block, getChannel(), environments);
       }
-      await sendAndReport(resolved.document, resolved.block, getChannel(), environments);
-    }),
-    vscode.commands.registerCommand('localApiCheck.runCheck', async (ref: RequestRef) => {
-      const resolved = await resolveRequest(ref);
+    ),
+    vscode.commands.registerCommand('localApiCheck.runCheck', async (arg: RequestRef | RequestNode) => {
+      const resolved = await resolveRequest(toRef(arg));
       if (!resolved) {
         void vscode.window.showWarningMessage('Local API Check: could not find that request.');
         return;
@@ -93,6 +111,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('localApiCheck.runAllChecksInWorkspace', () =>
       runChecksInWorkspace(getChannel(), environments)
     ),
+    vscode.commands.registerCommand('localApiCheck.revealRequest', (ref: RequestRef) =>
+      revealRequest(ref)
+    ),
+    vscode.commands.registerCommand('localApiCheck.refreshTree', () => tree.refresh()),
     vscode.commands.registerCommand('localApiCheck.selectEnvironment', () =>
       environments.promptToSelect()
     ),

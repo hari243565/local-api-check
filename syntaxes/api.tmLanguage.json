@@ -1,0 +1,89 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "API Check",
+  "scopeName": "source.local-api-check",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#block-header" },
+    { "include": "#expect-block" },
+    { "include": "#request-line" },
+    { "include": "#header-line" },
+    { "include": "#variable" },
+    { "include": "#json" }
+  ],
+  "repository": {
+    "comment": {
+      "match": "^\\s*#(?!##).*$",
+      "name": "comment.line.number-sign.api"
+    },
+    "block-header": {
+      "match": "^(###+)\\s*(.*)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.heading.api" },
+        "2": { "name": "entity.name.section.api" }
+      }
+    },
+    "request-line": {
+      "match": "^\\s*(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE)\\s+(\\S.*?)\\s*$",
+      "captures": {
+        "1": { "name": "keyword.control.method.api" },
+        "2": {
+          "name": "markup.underline.link.api",
+          "patterns": [{ "include": "#variable" }]
+        }
+      }
+    },
+    "header-line": {
+      "match": "^\\s*([A-Za-z0-9!#$%&'*+.^_`|~-]+)(:)\\s*(.*)$",
+      "captures": {
+        "1": { "name": "support.type.property-name.api" },
+        "2": { "name": "punctuation.separator.key-value.api" },
+        "3": {
+          "name": "string.unquoted.header-value.api",
+          "patterns": [{ "include": "#variable" }]
+        }
+      }
+    },
+    "expect-block": {
+      "begin": "^(expect)(:)\\s*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.expect.api" },
+        "2": { "name": "punctuation.separator.key-value.api" }
+      },
+      "end": "^(?=\\S)",
+      "patterns": [
+        {
+          "match": "^\\s+(status|json_has)(:)\\s*(.*)$",
+          "captures": {
+            "1": { "name": "support.function.assertion.api" },
+            "2": { "name": "punctuation.separator.key-value.api" },
+            "3": {
+              "name": "constant.other.expectation.api",
+              "patterns": [
+                { "match": "\\b\\d+\\b", "name": "constant.numeric.api" },
+                { "match": "\"[^\"]*\"", "name": "string.quoted.double.api" }
+              ]
+            }
+          }
+        },
+        { "include": "#comment" }
+      ]
+    },
+    "variable": {
+      "match": "\\{\\{\\s*[A-Za-z0-9_.\\-]+\\s*\\}\\}",
+      "name": "variable.other.template.api"
+    },
+    "json": {
+      "patterns": [
+        { "include": "#variable" },
+        {
+          "match": "\"(?:[^\"\\\\]|\\\\.)*\"\\s*(?=:)",
+          "name": "support.type.property-name.json.api"
+        },
+        { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "name": "string.quoted.double.json.api" },
+        { "match": "\\b(true|false|null)\\b", "name": "constant.language.json.api" },
+        { "match": "-?\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?\\b", "name": "constant.numeric.json.api" }
+      ]
+    }
+  }
+}

@@ -10,3 +10,6 @@ tsconfig.json
 tsconfig.test.json
 **/*.map
 **/*.ts
+tools/**
+examples/**
+.api-env/**

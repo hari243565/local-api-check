@@ -1,10 +1,27 @@
 {
   "name": "local-api-check",
   "displayName": "Local API Check",
-  "description": "Offline, git-native API testing for VS Code — no account, no cloud sync.",
-  "version": "0.0.1",
+  "description": "Offline, git-native API testing for VS Code — write requests in plain .api files, run them with one click, turn any request into a pass/fail check. No account, no cloud sync.",
+  "version": "0.1.0",
   "publisher": "local-api-check-dev",
   "license": "MIT",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1e2430",
+    "theme": "dark"
+  },
+  "keywords": [
+    "api",
+    "rest",
+    "http",
+    "testing",
+    "offline",
+    "postman alternative",
+    "http client",
+    "rest client",
+    "api testing",
+    "insomnia alternative"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -28,38 +45,89 @@
         "extensions": [
           ".api"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "images/activity-bar.svg",
+          "dark": "images/activity-bar.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "local-api-check",
+        "scopeName": "source.local-api-check",
+        "path": "./syntaxes/api.tmLanguage.json"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "localApiCheck",
+          "title": "Local API Check",
+          "icon": "images/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "localApiCheck": [
+        {
+          "id": "localApiCheck.requests",
+          "name": "Requests",
+          "icon": "images/activity-bar.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "localApiCheck.requests",
+        "contents": "No .api files yet.\n\nCreate a file ending in .api, write a request like\n\nGET https://example.com/health\n\nand it shows up here.\n\n[Select environment](command:localApiCheck.selectEnvironment)"
       }
     ],
     "commands": [
       {
         "command": "localApiCheck.sendRequest",
         "title": "Send Request",
-        "category": "Local API Check"
+        "category": "Local API Check",
+        "icon": "$(play)"
       },
       {
         "command": "localApiCheck.runCheck",
         "title": "Run Check",
-        "category": "Local API Check"
+        "category": "Local API Check",
+        "icon": "$(check)"
       },
       {
         "command": "localApiCheck.runAllChecksInFile",
         "title": "Run All Checks in File",
-        "category": "Local API Check"
+        "category": "Local API Check",
+        "icon": "$(check-all)"
       },
       {
         "command": "localApiCheck.runAllChecksInWorkspace",
         "title": "Run All Checks in Workspace",
-        "category": "Local API Check"
+        "category": "Local API Check",
+        "icon": "$(checklist)"
       },
       {
         "command": "localApiCheck.selectEnvironment",
         "title": "Select Environment",
-        "category": "Local API Check"
+        "category": "Local API Check",
+        "icon": "$(globe)"
       },
       {
         "command": "localApiCheck.extractSecret",
         "title": "Extract Secret to Environment",
+        "category": "Local API Check"
+      },
+      {
+        "command": "localApiCheck.refreshTree",
+        "title": "Refresh",
+        "category": "Local API Check",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "localApiCheck.revealRequest",
+        "title": "Go to Request",
         "category": "Local API Check"
       },
       {
@@ -79,12 +147,56 @@
           "when": "false"
         },
         {
-          "command": "localApiCheck.runAllChecksInFile",
-          "when": "resourceExtname == .api"
+          "command": "localApiCheck.revealRequest",
+          "when": "false"
         },
         {
           "command": "localApiCheck.extractSecret",
           "when": "false"
+        },
+        {
+          "command": "localApiCheck.refreshTree",
+          "when": "false"
+        },
+        {
+          "command": "localApiCheck.runAllChecksInFile",
+          "when": "resourceExtname == .api"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "localApiCheck.runAllChecksInWorkspace",
+          "when": "view == localApiCheck.requests",
+          "group": "navigation@1"
+        },
+        {
+          "command": "localApiCheck.selectEnvironment",
+          "when": "view == localApiCheck.requests",
+          "group": "navigation@2"
+        },
+        {
+          "command": "localApiCheck.refreshTree",
+          "when": "view == localApiCheck.requests",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "localApiCheck.sendRequest",
+          "when": "view == localApiCheck.requests && viewItem =~ /^localApiCheck\\.(check)?[Rr]equest$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "localApiCheck.runCheck",
+          "when": "view == localApiCheck.requests && viewItem == localApiCheck.checkRequest",
+          "group": "inline@2"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "localApiCheck.runAllChecksInFile",
+          "when": "resourceExtname == .api",
+          "group": "navigation"
         }
       ]
     },
@@ -117,11 +229,14 @@
     "package": "npm run check-types && node esbuild.js --production",
     "check-types": "tsc --noEmit",
     "pretest": "tsc -p tsconfig.test.json",
-    "test": "node --test \"./out-test/**/*.test.js\""
+    "test": "node --test \"./out-test/**/*.test.js\"",
+    "icon": "node tools/make-icon.js",
+    "vsix": "npm run package && vsce package --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.32.0",
     "esbuild": "^0.21.5",
     "typescript": "^5.4.5"
   }
