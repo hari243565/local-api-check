@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import type { CheckResult } from './assert';
 import { ApiCodeLensProvider, type RequestRef } from './codeLens';
 import { EnvironmentManager } from './environment';
+import { LicenseManager } from './license';
 import { SecretGuard } from './secretGuard';
 import type { SecretFinding } from './secrets';
 import { ApiTreeDataProvider, revealRequest, type RequestNode } from './treeView';
@@ -21,6 +22,7 @@ import {
  */
 export interface LocalApiCheckApi {
   readonly environments: EnvironmentManager;
+  readonly license: LicenseManager;
   readonly tree: ApiTreeDataProvider;
   readonly secretGuard: SecretGuard;
   readonly outputChannel: vscode.OutputChannel;
@@ -61,12 +63,28 @@ function getChannel(): vscode.OutputChannel {
 
 export function activate(context: vscode.ExtensionContext): LocalApiCheckApi {
   const environments = new EnvironmentManager(context);
+  const license = new LicenseManager(context, (line) => getChannel().appendLine(line));
   const codeLensProvider = new ApiCodeLensProvider();
   const secretGuard = new SecretGuard(environments);
   const tree = new ApiTreeDataProvider();
 
+  /**
+   * The gate on the paid features. Free-tier behaviour never passes through
+   * here: sending requests, environments and secret warnings do not ask.
+   */
+  const requirePro = async (feature: string): Promise<boolean> => {
+    if (await license.isPro()) {
+      return true;
+    }
+    // Deliberately not awaited: the notification resolves on a click that may
+    // never come, and the command has to return either way.
+    void license.showUpsell(feature);
+    return false;
+  };
+
   context.subscriptions.push(
     environments,
+    license,
     codeLensProvider,
     secretGuard,
     tree,
@@ -104,6 +122,9 @@ export function activate(context: vscode.ExtensionContext): LocalApiCheckApi {
     vscode.commands.registerCommand(
       'localApiCheck.runCheck',
       async (arg: RequestRef | RequestNode): Promise<CheckResult | undefined> => {
+        if (!(await requirePro('Run Check'))) {
+          return undefined;
+        }
         const resolved = await resolveRequest(toRef(arg));
         if (!resolved) {
           void vscode.window.showWarningMessage('Local API Check: could not find that request.');
@@ -118,6 +139,9 @@ export function activate(context: vscode.ExtensionContext): LocalApiCheckApi {
     vscode.commands.registerCommand(
       'localApiCheck.runAllChecksInFile',
       async (): Promise<CheckResult[] | undefined> => {
+        if (!(await requirePro('Run All Checks in File'))) {
+          return undefined;
+        }
         const document = activeApiDocument();
         if (!document) {
           void vscode.window.showWarningMessage(
@@ -130,7 +154,10 @@ export function activate(context: vscode.ExtensionContext): LocalApiCheckApi {
     ),
     vscode.commands.registerCommand(
       'localApiCheck.runAllChecksInWorkspace',
-      (): Promise<CheckResult[]> => runChecksInWorkspace(getChannel(), environments)
+      async (): Promise<CheckResult[] | undefined> =>
+        (await requirePro('Run All Checks in Workspace'))
+          ? runChecksInWorkspace(getChannel(), environments)
+          : undefined
     ),
     vscode.commands.registerCommand('localApiCheck.revealRequest', (ref: RequestRef) =>
       revealRequest(ref)
@@ -153,13 +180,23 @@ export function activate(context: vscode.ExtensionContext): LocalApiCheckApi {
     ),
     vscode.commands.registerCommand('localApiCheck.showOutput', () => {
       getChannel().show(true);
-    })
+    }),
+    // Passing the key directly is what a keybinding, a task, or the test suite
+    // uses; with no argument it opens the input box.
+    vscode.commands.registerCommand('localApiCheck.enterLicenseKey', (key?: string) =>
+      license.enterKey(key)
+    ),
+    vscode.commands.registerCommand('localApiCheck.licenseStatus', () => license.showStatus()),
+    vscode.commands.registerCommand('localApiCheck.removeLicense', () => license.removeKey())
   );
 
   void environments.scaffoldEnvFolder();
   void environments.updateStatusBar();
+  // Never awaited: an unreachable licence server must not delay activation,
+  // and this does nothing at all when no key is stored.
+  void license.refreshIfStale();
 
-  return { environments, tree, secretGuard, outputChannel: getChannel() };
+  return { environments, license, tree, secretGuard, outputChannel: getChannel() };
 }
 
 export function deactivate(): void {

@@ -113,14 +113,30 @@ When you save a `.api` file, it is scanned for things that look like credentials
 
 You get a warning and a quick fix that moves the value into your active environment file and replaces it with `{{auth_token}}` in place. It is always a nudge, never a block — turn it off with `localApiCheck.warnOnHardcodedSecrets`.
 
+## Free and Pro
+
+**Free, forever.** Writing and sending requests, `.api-env` environments and `{{variable}}` substitution, and hardcoded-secret warnings with their quick fix. That is a complete HTTP client, and it is not time-limited, request-limited or nagged.
+
+**Pro, one-time purchase.** The pass/fail check system: `expect:` blocks, `Run Check`, `Run All Checks in File`, and `Run All Checks in Workspace` — the part that turns a folder of requests into a suite you can run before a commit.
+
+How the licence behaves, in full:
+
+- The key is stored in your OS keychain (VS Code `SecretStorage`), never in a file and never in your project.
+- Activating a key contacts Dodo Payments once. After that it is re-checked at most once every 21 days.
+- **If that check cannot be made, Pro keeps working.** A network error, a timeout, or any error response leaves your licence exactly as it was. Only an explicit "this key is not valid" answer locks the Pro features — and even then, everything in the free tier keeps working.
+- `Local API Check: License Status` says which of those states you are in, in plain words.
+
 ## Commands
 
 | Command                                        | What it does                                          |
 | ---------------------------------------------- | ----------------------------------------------------- |
-| `Local API Check: Run All Checks in File`      | Runs every `expect:` block in the open file.           |
-| `Local API Check: Run All Checks in Workspace` | Runs every `expect:` block in every `.api` file.       |
+| `Local API Check: Run All Checks in File`      | Runs every `expect:` block in the open file. *(Pro)*   |
+| `Local API Check: Run All Checks in Workspace` | Runs every `expect:` block in every `.api` file. *(Pro)* |
 | `Local API Check: Select Environment`          | Switches the active `.api-env` file.                   |
 | `Local API Check: Show Output`                 | Opens the output channel.                              |
+| `Local API Check: Enter License Key`           | Activates a Pro licence key.                           |
+| `Local API Check: License Status`              | Shows the current licence state.                       |
+| `Local API Check: Remove License Key`          | Deletes the stored key from this machine.              |
 
 ## Settings
 
@@ -132,7 +148,9 @@ You get a warning and a quick fix that moves the value into your active environm
 
 ## Privacy
 
-There is no backend. The extension makes exactly the HTTP requests you write and run, using the Node runtime's built-in `fetch`. It collects no telemetry, has no account, and stores nothing outside your project folder.
+There is no backend. The extension makes exactly the HTTP requests you write and run, using the Node runtime's built-in `fetch`. It collects no telemetry and has no account.
+
+The one exception, stated plainly: if you enter a Pro licence key, the extension calls Dodo Payments to activate it, and again at most once every 21 days to check it is still valid. Those two calls send your licence key and a random identifier generated on this install — no hostname, no machine fingerprint, nothing about your projects or your requests. They use Dodo's public licence endpoints, so the extension ships with no API key of any kind. Without a licence key, the extension makes no calls of its own at all.
 
 ## License
 

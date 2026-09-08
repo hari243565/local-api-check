@@ -1,7 +1,7 @@
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
 import type { CheckResult } from '../../assert';
-import { activateExtension, showFixture, useEnvironment } from './helpers';
+import { activateExtension, clearTestLicense, grantTestLicense, showFixture, useEnvironment } from './helpers';
 import { ensureTestServers } from './testServer';
 
 /**
@@ -14,6 +14,12 @@ suite('Run All Checks', () => {
     await ensureTestServers();
     await activateExtension();
     await useEnvironment('local');
+    // Checks are the Pro feature; the licensing suite proves the gate itself.
+    await grantTestLicense();
+  });
+
+  suiteTeardown(async () => {
+    await clearTestLicense();
   });
 
   function failureDetails(result: CheckResult): string[] {

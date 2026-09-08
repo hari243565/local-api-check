@@ -16,8 +16,24 @@ export const STAGING_PORT = 39872;
 
 const servers = new Map<number, http.Server>();
 
+let requests = 0;
+
+/**
+ * How many requests the fixture servers have answered. A gated command that
+ * is genuinely blocked never reaches the network, and this is how that is
+ * proven rather than inferred from a return value.
+ */
+export function requestCount(): number {
+  return requests;
+}
+
+export function resetRequestCount(): void {
+  requests = 0;
+}
+
 function handle(port: number): http.RequestListener {
   return (request, response) => {
+    requests++;
     const chunks: Buffer[] = [];
     request.on('data', (chunk: Buffer) => chunks.push(chunk));
     request.on('end', () => {

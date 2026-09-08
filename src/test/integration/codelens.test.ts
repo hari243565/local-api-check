@@ -110,7 +110,10 @@ suite('CodeLens', () => {
       'localApiCheck.extractSecret',
       'localApiCheck.revealRequest',
       'localApiCheck.refreshTree',
-      'localApiCheck.showOutput'
+      'localApiCheck.showOutput',
+      'localApiCheck.enterLicenseKey',
+      'localApiCheck.licenseStatus',
+      'localApiCheck.removeLicense'
     ]) {
       assert.ok(registered.includes(command), `${command} is not registered`);
     }

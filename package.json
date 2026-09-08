@@ -134,6 +134,21 @@
         "command": "localApiCheck.showOutput",
         "title": "Show Output",
         "category": "Local API Check"
+      },
+      {
+        "command": "localApiCheck.enterLicenseKey",
+        "title": "Enter License Key",
+        "category": "Local API Check"
+      },
+      {
+        "command": "localApiCheck.licenseStatus",
+        "title": "License Status",
+        "category": "Local API Check"
+      },
+      {
+        "command": "localApiCheck.removeLicense",
+        "title": "Remove License Key",
+        "category": "Local API Check"
       }
     ],
     "menus": {
@@ -231,7 +246,8 @@
     "pretest": "tsc -p tsconfig.test.json",
     "test": "node --test \"./out-test/test/*.test.js\"",
     "icon": "node tools/make-icon.js",
-    "vsix": "npm run package && vsce package --no-dependencies",
+    "check-secrets": "node tools/check-no-secrets.js",
+    "vsix": "npm run package && npm run check-secrets && vsce package --no-dependencies",
     "compile-tests": "tsc -p tsconfig.integration.json",
     "test:integration": "npm run compile && npm run compile-tests && node tools/seed-test-profile.js && vscode-test",
     "test:all": "npm test && npm run test:integration"
