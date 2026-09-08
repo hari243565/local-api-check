@@ -1,0 +1,9 @@
+node_modules/
+out/
+dist/
+*.vsix
+.vscode-test/
+
+# Local (secret-bearing) environment files for local-api-check
+.api-env/*.local.json
+out-test/
