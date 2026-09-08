@@ -1,0 +1,5 @@
+{
+  "_comment": "Fixture environment. base_url points at the integration test server.",
+  "base_url": "http://127.0.0.1:39871",
+  "auth_token": "local-fixture-token"
+}

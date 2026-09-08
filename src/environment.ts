@@ -161,8 +161,24 @@ export class EnvironmentManager implements vscode.Disposable {
     return names.includes('local') ? 'local' : names[0];
   }
 
+  /**
+   * Switches straight to a named environment. Returns false when no such file
+   * exists, so a caller can tell the difference between "switched" and "typo".
+   */
+  async setEnvironment(name: string): Promise<boolean> {
+    const names = await this.listEnvironmentNames();
+    if (!names.includes(name)) {
+      void vscode.window.showWarningMessage(
+        `Local API Check: no environment "${name}" in ${ENV_FOLDER}/.`
+      );
+      return false;
+    }
+    await this.setActiveName(name);
+    return true;
+  }
+
   /** Quick pick to switch the active environment. */
-  async promptToSelect(): Promise<void> {
+  async promptToSelect(): Promise<boolean> {
     const names = await this.listEnvironmentNames();
     if (names.length === 0) {
       const create = 'Create .api-env';
@@ -173,7 +189,7 @@ export class EnvironmentManager implements vscode.Disposable {
       if (answer === create) {
         await this.scaffoldEnvFolder(true);
       }
-      return;
+      return false;
     }
 
     const active = this.activeName ?? (await this.defaultEnvironmentName());
@@ -191,9 +207,11 @@ export class EnvironmentManager implements vscode.Disposable {
       { title: 'Local API Check: select environment', placeHolder: 'Environment' }
     );
 
-    if (picked) {
-      await this.setActiveName(picked.name);
+    if (!picked) {
+      return false;
     }
+    await this.setActiveName(picked.name);
+    return true;
   }
 
   async updateStatusBar(): Promise<void> {

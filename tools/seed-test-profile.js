@@ -1,0 +1,43 @@
+/**
+ * Seeds the isolated VS Code profile that the integration suite runs in
+ * (.vscode-test/user-data, created by @vscode/test-electron).
+ *
+ * The point is a quiet, deterministic host: no update checks, no telemetry, no
+ * built-in chat/agent features reaching for GitHub auth. Combined with
+ * --disable-extensions, that leaves this extension as the only thing in the log
+ * that can go wrong.
+ *
+ * Run with: node tools/seed-test-profile.js
+ */
+const fs = require('fs');
+const path = require('path');
+
+const settings = {
+  'telemetry.telemetryLevel': 'off',
+  'update.mode': 'none',
+  'update.showReleaseNotes': false,
+  'extensions.autoUpdate': false,
+  'extensions.autoCheckUpdates': false,
+  'extensions.ignoreRecommendations': true,
+  'workbench.startupEditor': 'none',
+  'workbench.enableExperiments': false,
+  'workbench.settings.enableNaturalLanguageSearch': false,
+  'security.workspace.trust.enabled': false,
+  'git.autofetch': false,
+  'git.enabled': false,
+  'npm.fetchOnlinePackageInfo': false,
+  'typescript.disableAutomaticTypeAcquisition': true,
+  // Built-in chat / agent host: keep it from starting up and from asking
+  // GitHub for a token, which is otherwise logged on every run.
+  'chat.disableAIFeatures': true,
+  'chat.commandCenter.enabled': false,
+  'chat.agentSessionsViewLocation': 'disabled',
+  'chat.detectParticipant.enabled': false,
+  'workbench.commandPalette.experimental.suggestCommands': false
+};
+
+const userDir = path.join(__dirname, '..', '.vscode-test', 'user-data', 'User');
+fs.mkdirSync(userDir, { recursive: true });
+const target = path.join(userDir, 'settings.json');
+fs.writeFileSync(target, `${JSON.stringify(settings, undefined, 2)}\n`, 'utf8');
+console.log(`seeded ${path.relative(path.join(__dirname, '..'), target)}`);

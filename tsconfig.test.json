@@ -13,5 +13,9 @@
     "src/assert.ts",
     "src/env.ts",
     "src/secrets.ts"
+  ],
+  "exclude": [
+    "src/test/integration",
+    "src/test/fixtures"
   ]
 }

@@ -1,0 +1,5 @@
+{
+  "_comment": "Second fixture environment, on a different port, to prove switching works.",
+  "base_url": "http://127.0.0.1:39872",
+  "auth_token": "staging-fixture-token"
+}

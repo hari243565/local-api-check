@@ -229,15 +229,23 @@
     "package": "npm run check-types && node esbuild.js --production",
     "check-types": "tsc --noEmit",
     "pretest": "tsc -p tsconfig.test.json",
-    "test": "node --test \"./out-test/**/*.test.js\"",
+    "test": "node --test \"./out-test/test/*.test.js\"",
     "icon": "node tools/make-icon.js",
-    "vsix": "npm run package && vsce package --no-dependencies"
+    "vsix": "npm run package && vsce package --no-dependencies",
+    "compile-tests": "tsc -p tsconfig.integration.json",
+    "test:integration": "npm run compile && npm run compile-tests && node tools/seed-test-profile.js && vscode-test",
+    "test:all": "npm test && npm run test:integration"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.11.30",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^2.32.0",
     "esbuild": "^0.21.5",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
   }
 }

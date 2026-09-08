@@ -1,0 +1,11 @@
+# Fixture: a single request. Drives the CodeLens, send and environment tests.
+# The test server answers on the port defined by {{base_url}} in .api-env/.
+
+### Echo request
+GET {{base_url}}/echo
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+expect:
+  status: 200
+  json_has: ["id", "title"]

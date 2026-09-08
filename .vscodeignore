@@ -6,10 +6,12 @@ node_modules/**
 .gitignore
 .github/**
 esbuild.js
-tsconfig.json
-tsconfig.test.json
+tsconfig*.json
 **/*.map
 **/*.ts
 tools/**
 examples/**
 .api-env/**
+out/**
+.vscode-test/**
+.vscode-test.mjs

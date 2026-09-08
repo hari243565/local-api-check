@@ -73,6 +73,22 @@ export function warningLines(block: RequestBlock, unresolved: string[], environm
   return lines;
 }
 
+/** What the send-request command hands back to its caller. */
+export interface SendSummary {
+  name: string;
+  method: string;
+  /** URL after variable substitution — what was actually requested. */
+  url: string;
+  headers: Array<{ name: string; value: string }>;
+  completed: boolean;
+  status: number;
+  bodyText: string;
+  durationMs: number;
+  unresolved: string[];
+  environment?: string;
+  error?: string;
+}
+
 /**
  * Sends one request and writes the full response to the output channel.
  */
@@ -81,7 +97,7 @@ export async function sendAndReport(
   block: RequestBlock,
   channel: vscode.OutputChannel,
   environments: EnvironmentManager
-): Promise<void> {
+): Promise<SendSummary> {
   const environment = await environments.resolve(document.uri);
   const { request, unresolved } = prepareWithEnv(block, environment.vars);
 
@@ -107,6 +123,20 @@ export async function sendAndReport(
       `Local API Check: ${request.name} failed — ${response.error ?? 'unknown error'}`
     );
   }
+
+  return {
+    name: request.name,
+    method: request.method.toUpperCase(),
+    url: request.url,
+    headers: request.headers,
+    completed: response.completed,
+    status: response.status,
+    bodyText: response.bodyText,
+    durationMs: response.durationMs,
+    unresolved,
+    environment: environment.name,
+    error: response.error
+  };
 }
 
 /**
@@ -217,22 +247,23 @@ export async function runChecksInFile(
   document: vscode.TextDocument,
   channel: vscode.OutputChannel,
   environments: EnvironmentManager
-): Promise<void> {
+): Promise<CheckResult[]> {
   const scope = vscode.workspace.asRelativePath(document.uri);
   const results = await runChecksOverDocuments([document], channel, environments, scope);
   announce(results, scope);
+  return results;
 }
 
 export async function runChecksInWorkspace(
   channel: vscode.OutputChannel,
   environments: EnvironmentManager
-): Promise<void> {
+): Promise<CheckResult[]> {
   const uris = await findApiFiles();
   if (uris.length === 0) {
     void vscode.window.showInformationMessage(
       'Local API Check: no .api files found in this workspace.'
     );
-    return;
+    return [];
   }
 
   const documents: vscode.TextDocument[] = [];
@@ -243,6 +274,7 @@ export async function runChecksInWorkspace(
   const scope = `${uris.length} .api file${uris.length === 1 ? '' : 's'}`;
   const results = await runChecksOverDocuments(documents, channel, environments, scope);
   announce(results, scope);
+  return results;
 }
 
 /** All `.api` files in the workspace, excluding the usual noise directories. */

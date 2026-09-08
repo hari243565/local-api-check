@@ -1,0 +1,40 @@
+# Fixture: two checks that must pass, two that must fail, one plain request.
+# Designed outcome for "Run All Checks in File": 2 passed, 2 failed.
+
+### Todo exists
+GET {{base_url}}/todos/1
+Accept: application/json
+
+expect:
+  status: 200
+  json_has: ["id", "title"]
+
+### Create a post
+POST {{base_url}}/posts
+Content-Type: application/json
+
+{
+  "title": "fixture post",
+  "userId": 1
+}
+
+expect:
+  status: 201
+  json_has: ["id"]
+
+### Missing todo fails on status
+GET {{base_url}}/todos/does-not-exist
+Accept: application/json
+
+expect:
+  status: 200
+
+### Plain text body fails json_has
+GET {{base_url}}/plain
+
+expect:
+  status: 200
+  json_has: ["id"]
+
+### Plain request with no expectations
+GET {{base_url}}/todos/1
