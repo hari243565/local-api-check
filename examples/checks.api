@@ -1,0 +1,39 @@
+# A small suite: three checks that should pass, one that deliberately fails.
+# Run them all with "Local API Check: Run All Checks in File".
+
+### Todo exists
+GET {{base_url}}/todos/{{todo_id}}
+Accept: application/json
+
+expect:
+  status: 200
+  json_has: ["id", "title", "completed"]
+
+### Users list is an array of objects
+GET {{base_url}}/users
+Accept: application/json
+
+expect:
+  status: 200
+  json_has: ["0.id", "0.email"]
+
+### Create a post
+POST {{base_url}}/posts
+Content-Type: application/json
+
+{
+  "title": "regression check",
+  "userId": 1
+}
+
+expect:
+  status: 201
+  json_has: ["id"]
+
+### Missing todo (deliberately failing example)
+GET {{base_url}}/todos/does-not-exist
+Accept: application/json
+
+expect:
+  status: 200
+  json_has: ["id"]

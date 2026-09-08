@@ -1,4 +1,11 @@
 import * as vscode from 'vscode';
+import {
+  evaluateExpectations,
+  formatCheckResult,
+  formatSummary,
+  summaryText,
+  type CheckResult
+} from './assert';
 import type { RequestRef } from './codeLens';
 import type { EnvironmentManager, ResolvedEnvironment } from './environment';
 import { prepareWithEnv } from './env';
@@ -100,4 +107,146 @@ export async function sendAndReport(
       `Local API Check: ${request.name} failed — ${response.error ?? 'unknown error'}`
     );
   }
+}
+
+/**
+ * Runs one block against its `expect:` block and prints a pass/fail line.
+ */
+export async function runCheck(
+  document: vscode.TextDocument,
+  block: RequestBlock,
+  channel: vscode.OutputChannel,
+  environments: EnvironmentManager
+): Promise<CheckResult> {
+  const environment = await environments.resolve(document.uri);
+  const { request, unresolved } = prepareWithEnv(block, environment.vars);
+
+  for (const line of warningLines(block, unresolved, environment)) {
+    channel.appendLine(line);
+  }
+
+  const response = await sendHttpRequest(request, getTimeoutMs());
+  const result = evaluateExpectations(block.name, block.expect, response);
+
+  for (const line of formatCheckResult(request, result, environment.name)) {
+    channel.appendLine(line);
+  }
+  return result;
+}
+
+/** Every block in a document that carries an `expect:` block. */
+export function checkableBlocks(document: vscode.TextDocument): RequestBlock[] {
+  return parseApiFile(document.getText()).requests.filter((r) => r.expect !== undefined);
+}
+
+async function runChecksOverDocuments(
+  documents: vscode.TextDocument[],
+  channel: vscode.OutputChannel,
+  environments: EnvironmentManager,
+  scope: string
+): Promise<CheckResult[]> {
+  const results: CheckResult[] = [];
+
+  channel.show(true);
+  channel.appendLine('');
+  channel.appendLine('═'.repeat(72));
+  channel.appendLine(`Running checks — ${scope}  (${new Date().toLocaleTimeString()})`);
+  channel.appendLine('═'.repeat(72));
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `Local API Check: running checks in ${scope}`,
+      cancellable: true
+    },
+    async (progress, token) => {
+      const total = documents.reduce((sum, doc) => sum + checkableBlocks(doc).length, 0);
+      let done = 0;
+
+      for (const document of documents) {
+        const blocks = checkableBlocks(document);
+        if (blocks.length === 0) {
+          continue;
+        }
+        if (documents.length > 1) {
+          channel.appendLine('');
+          channel.appendLine(`${vscode.workspace.asRelativePath(document.uri)}`);
+        }
+
+        for (const block of blocks) {
+          if (token.isCancellationRequested) {
+            channel.appendLine('');
+            channel.appendLine('Cancelled.');
+            return;
+          }
+          progress.report({
+            message: `${block.name} (${done + 1}/${total})`,
+            increment: total > 0 ? 100 / total : 0
+          });
+          // Sequential on purpose: predictable ordering, and it does not hammer
+          // whatever the user is pointing this at.
+          results.push(await runCheck(document, block, channel, environments));
+          done++;
+        }
+      }
+    }
+  );
+
+  for (const line of formatSummary(results, scope)) {
+    channel.appendLine(line);
+  }
+  return results;
+}
+
+function announce(results: CheckResult[], scope: string): void {
+  if (results.length === 0) {
+    void vscode.window.showInformationMessage(
+      `Local API Check: no checks found in ${scope}. Add an "expect:" block to a request.`
+    );
+    return;
+  }
+  const text = `Local API Check: ${summaryText(results)} (${scope})`;
+  if (results.some((r) => !r.passed)) {
+    void vscode.window.showWarningMessage(text);
+  } else {
+    void vscode.window.showInformationMessage(text);
+  }
+}
+
+export async function runChecksInFile(
+  document: vscode.TextDocument,
+  channel: vscode.OutputChannel,
+  environments: EnvironmentManager
+): Promise<void> {
+  const scope = vscode.workspace.asRelativePath(document.uri);
+  const results = await runChecksOverDocuments([document], channel, environments, scope);
+  announce(results, scope);
+}
+
+export async function runChecksInWorkspace(
+  channel: vscode.OutputChannel,
+  environments: EnvironmentManager
+): Promise<void> {
+  const uris = await findApiFiles();
+  if (uris.length === 0) {
+    void vscode.window.showInformationMessage(
+      'Local API Check: no .api files found in this workspace.'
+    );
+    return;
+  }
+
+  const documents: vscode.TextDocument[] = [];
+  for (const uri of uris) {
+    documents.push(await vscode.workspace.openTextDocument(uri));
+  }
+
+  const scope = `${uris.length} .api file${uris.length === 1 ? '' : 's'}`;
+  const results = await runChecksOverDocuments(documents, channel, environments, scope);
+  announce(results, scope);
+}
+
+/** All `.api` files in the workspace, excluding the usual noise directories. */
+export async function findApiFiles(): Promise<vscode.Uri[]> {
+  const uris = await vscode.workspace.findFiles('**/*.api', '**/{node_modules,.git,out,dist}/**');
+  return uris.sort((a, b) => a.path.localeCompare(b.path));
 }

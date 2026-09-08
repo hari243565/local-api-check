@@ -38,6 +38,21 @@
         "category": "Local API Check"
       },
       {
+        "command": "localApiCheck.runCheck",
+        "title": "Run Check",
+        "category": "Local API Check"
+      },
+      {
+        "command": "localApiCheck.runAllChecksInFile",
+        "title": "Run All Checks in File",
+        "category": "Local API Check"
+      },
+      {
+        "command": "localApiCheck.runAllChecksInWorkspace",
+        "title": "Run All Checks in Workspace",
+        "category": "Local API Check"
+      },
+      {
         "command": "localApiCheck.selectEnvironment",
         "title": "Select Environment",
         "category": "Local API Check"
@@ -53,6 +68,14 @@
         {
           "command": "localApiCheck.sendRequest",
           "when": "false"
+        },
+        {
+          "command": "localApiCheck.runCheck",
+          "when": "false"
+        },
+        {
+          "command": "localApiCheck.runAllChecksInFile",
+          "when": "resourceExtname == .api"
         }
       ]
     },

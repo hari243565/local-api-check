@@ -38,6 +38,27 @@ export class ApiCodeLensProvider implements vscode.CodeLensProvider {
           arguments: [ref]
         })
       );
+
+      if (request.expect) {
+        const expectations = [
+          request.expect.status !== undefined ? `status ${request.expect.status}` : undefined,
+          request.expect.jsonHas.length > 0
+            ? `json_has ${request.expect.jsonHas.join(', ')}`
+            : undefined
+        ].filter(Boolean);
+
+        lenses.push(
+          new vscode.CodeLens(range, {
+            title: '✓ Run Check',
+            command: 'localApiCheck.runCheck',
+            tooltip:
+              expectations.length > 0
+                ? `Assert ${expectations.join(' and ')}`
+                : 'Run this request as a check',
+            arguments: [ref]
+          })
+        );
+      }
     }
 
     return lenses;
