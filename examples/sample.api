@@ -1,12 +1,14 @@
 # Sample requests for local-api-check.
 # Click "▶ Send Request" above a block to run it.
+# {{variables}} come from the active environment in .api-env/ — see the status bar.
 
 ### Get a todo
-GET https://jsonplaceholder.typicode.com/todos/1
+GET {{base_url}}/todos/{{todo_id}}
+Authorization: Bearer {{auth_token}}
 Accept: application/json
 
 ### Create a post
-POST https://jsonplaceholder.typicode.com/posts
+POST {{base_url}}/posts
 Content-Type: application/json
 
 {

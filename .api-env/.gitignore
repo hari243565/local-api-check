@@ -1,0 +1,3 @@
+# Environment files ending in .local.json hold real secrets and stay out of git.
+# Shared, non-secret environments (staging.json, local.json) are committed normally.
+*.local.json

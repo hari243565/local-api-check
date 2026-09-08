@@ -1,0 +1,6 @@
+{
+  "_comment": "Variables for the 'local' environment. Use them as {{base_url}} in .api files.",
+  "base_url": "https://jsonplaceholder.typicode.com",
+  "todo_id": "1",
+  "auth_token": "local-token-abc"
+}

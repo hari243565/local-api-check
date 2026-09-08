@@ -38,6 +38,11 @@
         "category": "Local API Check"
       },
       {
+        "command": "localApiCheck.selectEnvironment",
+        "title": "Select Environment",
+        "category": "Local API Check"
+      },
+      {
         "command": "localApiCheck.showOutput",
         "title": "Show Output",
         "category": "Local API Check"
@@ -59,6 +64,11 @@
           "default": 30000,
           "minimum": 1000,
           "markdownDescription": "How long to wait for a response before giving up, in milliseconds."
+        },
+        "localApiCheck.createEnvFolderOnActivate": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Create a starter `.api-env/local.json` (and a `.gitignore` for `*.local.json`) when a project has no `.api-env` folder yet."
         }
       }
     }

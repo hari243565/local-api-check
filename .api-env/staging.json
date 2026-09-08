@@ -1,0 +1,6 @@
+{
+  "_comment": "Shared, non-secret staging variables. Real secrets belong in staging.local.json (git-ignored).",
+  "base_url": "https://jsonplaceholder.typicode.com",
+  "todo_id": "2",
+  "auth_token": "staging-token-xyz"
+}

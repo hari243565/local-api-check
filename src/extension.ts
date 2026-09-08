@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ApiCodeLensProvider, type RequestRef } from './codeLens';
+import { EnvironmentManager } from './environment';
 import { resolveRequest, sendAndReport } from './runner';
 
 export const API_SELECTOR: vscode.DocumentSelector = [
@@ -17,10 +18,14 @@ function getChannel(): vscode.OutputChannel {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+  const environments = new EnvironmentManager(context);
   const codeLensProvider = new ApiCodeLensProvider();
+
   context.subscriptions.push(
+    environments,
     codeLensProvider,
-    vscode.languages.registerCodeLensProvider(API_SELECTOR, codeLensProvider)
+    vscode.languages.registerCodeLensProvider(API_SELECTOR, codeLensProvider),
+    environments.onDidChange(() => codeLensProvider.refresh())
   );
 
   context.subscriptions.push(
@@ -30,15 +35,18 @@ export function activate(context: vscode.ExtensionContext): void {
         void vscode.window.showWarningMessage('Local API Check: could not find that request.');
         return;
       }
-      await sendAndReport(resolved.block, getChannel());
-    })
-  );
-
-  context.subscriptions.push(
+      await sendAndReport(resolved.document, resolved.block, getChannel(), environments);
+    }),
+    vscode.commands.registerCommand('localApiCheck.selectEnvironment', () =>
+      environments.promptToSelect()
+    ),
     vscode.commands.registerCommand('localApiCheck.showOutput', () => {
       getChannel().show(true);
     })
   );
+
+  void environments.scaffoldEnvFolder();
+  void environments.updateStatusBar();
 }
 
 export function deactivate(): void {
