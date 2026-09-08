@@ -6,6 +6,16 @@ run by hand, once, in Dodo **test mode**, before this ever goes live.
 
 Budget about ten minutes. Nothing here costs real money — test mode uses test cards.
 
+## What Part A created (test mode, 2026-09-08)
+
+| | |
+|---|---|
+| Product | `pdt_0Nn9ZzwF0EAOFP3q3Pooh` — "Local API Check — Pro License", $24.00 USD one-time, `digital_products` |
+| Entitlement | `ent_0Nn9ZzuMdkI1g94JKIo2X` — License Key, `fulfillment_mode: auto`, 5 activations, no expiry |
+| Verified | Read back from `GET /products/{id}`: entitlement attached, `is_recurring: false`, legacy `license_key_enabled: false` |
+
+Both live in **test mode** (`https://test.dodopayments.com`). Nothing here has been created in live mode.
+
 ## Before you start
 
 - [ ] Part A has been run, so the product and its License Key entitlement exist in the Dodo dashboard.
@@ -26,7 +36,10 @@ Budget about ten minutes. Nothing here costs real money — test mode uses test 
 
 ## 2. Buy the product
 
-- [ ] Open the product's checkout link from the Dodo dashboard (Products → the Pro product → share/checkout link).
+- [ ] Get the checkout link: Dodo dashboard → Products → **Local API Check — Pro License** → enable the
+      payment/share link and copy it. The API does not return one, and the link may need enabling on the
+      product first — which is why `PRODUCT_URL` in `src/licenseApi.ts` is still `undefined`. Paste the
+      link back and it becomes the "Get a License" button in the **What is Pro?** dialog.
 - [ ] Pay with a Dodo **test card** (the dashboard lists the current test card numbers; `4242 4242 4242 4242`
       is the usual one). Use an email inbox you can actually open.
 - [ ] The payment succeeds and the order shows in the dashboard.
