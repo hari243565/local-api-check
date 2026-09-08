@@ -25,10 +25,37 @@ export const DODO_LIVE_BASE_URL = 'https://live.dodopayments.com';
 export const DODO_BASE_URL = DODO_TEST_BASE_URL;
 
 /**
- * Public product page, filled in once the Dodo product exists. Until then the
- * upsell explains Pro without pretending there is somewhere to buy it.
+ * Checkout links, one per mode.
+ *
+ * Deliberately keyed off DODO_BASE_URL rather than set directly: a test-mode
+ * checkout URL left behind in a live build would take real buyers to a
+ * sandbox that cannot sell them anything. Flipping the base URL flips this
+ * too, and until the live product exists the live build simply offers no
+ * purchase button rather than a wrong one.
  */
-export const PRODUCT_URL: string | undefined = undefined;
+export const DODO_TEST_CHECKOUT_URL =
+  'https://test.checkout.dodopayments.com/buy/pdt_0Nn9ZzwF0EAOFP3q3Pooh?quantity=1';
+export const DODO_LIVE_CHECKOUT_URL: string | undefined = undefined;
+
+/** Where "Get a License" sends people, or undefined when there is nowhere yet. */
+export const PRODUCT_URL: string | undefined =
+  DODO_BASE_URL === DODO_TEST_BASE_URL ? DODO_TEST_CHECKOUT_URL : DODO_LIVE_CHECKOUT_URL;
+
+/** The purchase button's label, shared by the dialog and its tests. */
+export const BUY_ACTION = 'Get a License';
+
+/**
+ * Actions offered in the "What's Pro?" dialog. The purchase button appears
+ * only when there is somewhere real to send people.
+ *
+ * `productUrl` is required rather than defaulting to PRODUCT_URL: a default
+ * would also swallow an explicitly passed `undefined`, so a caller asking
+ * "what if there is no link?" would silently get the answer for the link that
+ * happens to be configured.
+ */
+export function proDialogActions(productUrl: string | undefined): string[] {
+  return productUrl ? [BUY_ACTION] : [];
+}
 
 /** License calls are short; a slow one must never stall extension activation. */
 export const LICENSE_TIMEOUT_MS = 10_000;

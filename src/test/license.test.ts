@@ -2,10 +2,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   ACTIVATE_PATH,
+  BUY_ACTION,
   DODO_BASE_URL,
   DODO_LIVE_BASE_URL,
+  DODO_LIVE_CHECKOUT_URL,
   DODO_TEST_BASE_URL,
+  DODO_TEST_CHECKOUT_URL,
   LICENSE_HEADERS,
+  PRODUCT_URL,
+  proDialogActions,
   REVALIDATE_AFTER_MS,
   VALIDATE_PATH,
   activateLicense,
@@ -226,8 +231,36 @@ test('the revalidation window is 21 days', () => {
 });
 
 // ---------------------------------------------------------------------------
-// The entitlement decision itself
+// The purchase link
 // ---------------------------------------------------------------------------
+
+test('the checkout link matches the mode the extension is pointed at', () => {
+  // The failure this guards against is a test-mode checkout URL surviving into
+  // a live build, which would send real buyers somewhere that cannot sell.
+  if (DODO_BASE_URL === DODO_TEST_BASE_URL) {
+    assert.equal(PRODUCT_URL, DODO_TEST_CHECKOUT_URL);
+    assert.match(PRODUCT_URL ?? '', /^https:\/\/test\.checkout\.dodopayments\.com\//);
+  } else {
+    assert.equal(PRODUCT_URL, DODO_LIVE_CHECKOUT_URL);
+    assert.ok(
+      PRODUCT_URL === undefined || !PRODUCT_URL.includes('test.checkout.'),
+      'a live build must never offer a test-mode checkout link'
+    );
+  }
+});
+
+test('the checkout link is a well-formed URL for the product Part A created', () => {
+  assert.ok(PRODUCT_URL, 'no product URL is configured');
+  const url = new URL(PRODUCT_URL);
+  assert.equal(url.protocol, 'https:');
+  assert.equal(url.pathname, '/buy/pdt_0Nn9ZzwF0EAOFP3q3Pooh');
+  assert.equal(url.searchParams.get('quantity'), '1');
+});
+
+test('the purchase button appears only when there is somewhere to buy', () => {
+  assert.deepEqual(proDialogActions('https://example.test/buy/x'), [BUY_ACTION]);
+  assert.deepEqual(proDialogActions(undefined), []);
+});
 
 const NOW = Date.UTC(2026, 8, 8);
 

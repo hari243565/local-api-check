@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 import {
+  BUY_ACTION,
   DODO_BASE_URL,
   LICENSE_TIMEOUT_MS,
   PRODUCT_URL,
   REVALIDATE_AFTER_MS,
   activateLicense,
+  proDialogActions,
   isProState,
   licenseStateOf,
   postJson,
@@ -51,6 +53,11 @@ export const FREE_FEATURES =
 export const PRO_FEATURES =
   'Pro adds the pass/fail check system: expect: blocks, Run Check, Run All Checks in File, and Run All Checks in Workspace.';
 
+export const ENTER_KEY_ACTION = 'Enter License Key';
+export const WHATS_PRO_ACTION = "What's Pro?";
+/** The two buttons on the upsell notification. */
+export const UPSELL_ACTIONS = [ENTER_KEY_ACTION, WHATS_PRO_ACTION];
+
 /**
  * Owns license state: entry, activation, cached revalidation, and the answer
  * to "is Pro unlocked".
@@ -67,6 +74,9 @@ export class LicenseManager {
    */
   transport: PostJson = postJson;
   baseUrl: string = DODO_BASE_URL;
+
+  /** Swapped by the test suite so no automated run opens a real browser. */
+  openExternal: (uri: vscode.Uri) => Thenable<boolean> = (uri) => vscode.env.openExternal(uri);
 
   private lastOutcome: string | undefined;
   private readonly changed = new vscode.EventEmitter<LicenseSnapshot>();
@@ -398,28 +408,47 @@ export class LicenseManager {
         : `${feature} is a Pro feature.`;
     const message = `Local API Check: ${lead} ${FREE_FEATURES} ${PRO_FEATURES}`;
 
-    const actions = ['Enter License Key', 'What is Pro?'];
-    void vscode.window.showInformationMessage(message, ...actions).then((choice) => {
-      if (choice === 'Enter License Key') {
-        void vscode.commands.executeCommand('localApiCheck.enterLicenseKey');
-      } else if (choice === 'What is Pro?') {
-        void this.explainPro();
-      }
-    });
+    void vscode.window
+      .showInformationMessage(message, ...UPSELL_ACTIONS)
+      .then((choice) => {
+        if (choice === ENTER_KEY_ACTION) {
+          void vscode.commands.executeCommand('localApiCheck.enterLicenseKey');
+        } else if (choice === WHATS_PRO_ACTION) {
+          void this.explainPro();
+        }
+      });
     return message;
   }
 
-  private async explainPro(): Promise<void> {
-    const detail = `${FREE_FEATURES}\n\n${PRO_FEATURES}\n\nOne-time purchase, no subscription and no account. The license is stored in your OS keychain and checked at most once every 21 days; if the check cannot be made, Pro keeps working.`;
-    if (PRODUCT_URL) {
-      const buy = 'Get a License';
-      const choice = await vscode.window.showInformationMessage(detail, { modal: true }, buy);
-      if (choice === buy) {
-        await vscode.env.openExternal(vscode.Uri.parse(PRODUCT_URL));
-      }
-      return;
+  /**
+   * Opens the checkout page. This is exactly what the "Get a License" button
+   * does, factored out so it can be exercised without a real click — and so a
+   * test never actually launches a browser.
+   */
+  async openPurchasePage(): Promise<string | undefined> {
+    if (!PRODUCT_URL) {
+      return undefined;
     }
-    await vscode.window.showInformationMessage(detail, { modal: true });
+    await this.openExternal(vscode.Uri.parse(PRODUCT_URL));
+    return PRODUCT_URL;
+  }
+
+  /**
+   * The "What's Pro?" follow-up. Deliberately a notification rather than a
+   * modal: nothing here is urgent enough to seize the window, and the rest of
+   * the extension never does.
+   */
+  async explainPro(): Promise<string[]> {
+    const detail = `Local API Check Pro: ${PRO_FEATURES} One-time purchase — no subscription, no account. Your key is stored in your OS keychain and re-checked at most once every 21 days, and if that check cannot be made, Pro keeps working.`;
+    const actions = proDialogActions(PRODUCT_URL);
+
+    void vscode.window.showInformationMessage(detail, ...actions).then((choice) => {
+      if (choice === BUY_ACTION) {
+        void this.openPurchasePage();
+      }
+    });
+
+    return actions;
   }
 }
 

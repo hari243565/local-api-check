@@ -6,11 +6,12 @@ import * as vscode from 'vscode';
 import type { CheckResult } from '../../assert';
 import type { LocalApiCheckApi } from '../../extension';
 import type { LicenseEntryResult } from '../../license';
+import { UPSELL_ACTIONS } from '../../license';
 import {
   ACTIVATE_PATH,
+  BUY_ACTION,
   DODO_BASE_URL,
-  DODO_LIVE_BASE_URL,
-  DODO_TEST_BASE_URL,
+  PRODUCT_URL,
   VALIDATE_PATH
 } from '../../licenseApi';
 import type { SendSummary } from '../../runner';
@@ -143,6 +144,41 @@ suite('Licensing', () => {
     assert.match(message, /environments/i);
     assert.match(message, /hardcoded-secret warnings/i);
     assert.match(message, /expect:/);
+
+    // The two actions the brief calls for.
+    assert.deepEqual(UPSELL_ACTIONS, ['Enter License Key', "What's Pro?"]);
+  });
+
+  test("the What's Pro? dialog offers Get a License, and it opens the checkout page", async () => {
+    const opened: vscode.Uri[] = [];
+    const original = api.license.openExternal;
+    // Stubbed so the assertion is about which URL is opened, without a real
+    // browser launching out of a test run.
+    api.license.openExternal = async (uri) => {
+      opened.push(uri);
+      return true;
+    };
+
+    try {
+      const actions = await api.license.explainPro();
+      assert.deepEqual(actions, [BUY_ACTION], 'the purchase button was not offered');
+
+      // Exactly what the button's handler does when clicked.
+      const url = await api.license.openPurchasePage();
+      assert.equal(url, PRODUCT_URL);
+
+      assert.equal(opened.length, 1, 'the checkout page was not opened');
+      const uri = opened[0];
+      assert.equal(uri.scheme, 'https');
+      assert.equal(uri.authority, 'test.checkout.dodopayments.com');
+      assert.equal(uri.path, '/buy/pdt_0Nn9ZzwF0EAOFP3q3Pooh');
+      // The query has to survive Uri.parse intact, or the checkout opens with
+      // no quantity.
+      assert.equal(uri.query, 'quantity=1');
+      assert.equal(uri.toString(true), PRODUCT_URL);
+    } finally {
+      api.license.openExternal = original;
+    }
   });
 
   // -------------------------------------------------------------------------
@@ -436,20 +472,42 @@ suite('Licensing', () => {
       'utf8'
     );
 
-    const hosts = new Set(
-      [...bundle.matchAll(/https:\/\/[a-z0-9.-]*dodopayments\.com/gi)].map((m) => m[0])
-    );
+    // Every Dodo host this extension is allowed to reference. Adding one has
+    // to be a deliberate edit here, which is the whole point: the property
+    // being guarded is that no unreviewed host — a proxy, a staging shim,
+    // anything that would take licence traffic or buyers somewhere the
+    // documentation does not name — is baked into what ships.
+    const ALLOWED_HOSTS = new Set([
+      'test.dodopayments.com', // licence API, test mode
+      'live.dodopayments.com', // licence API, live mode
+      'test.checkout.dodopayments.com', // checkout, test mode
+      'checkout.dodopayments.com' // checkout, live mode
+    ]);
 
-    // The property that matters is that no third host is baked in — a proxy,
-    // a staging shim, anything that would take licence traffic somewhere the
-    // documentation does not name. The unused constant is legitimately tree-
-    // shaken away by esbuild, so its absence proves nothing either way.
+    const hosts = new Set(
+      [...bundle.matchAll(/https:\/\/([a-z0-9.-]*dodopayments\.com)/gi)].map((m) => m[1])
+    );
+    assert.ok(hosts.size > 0, 'no Dodo host survived bundling at all');
+
     for (const host of hosts) {
-      assert.ok(
-        host === DODO_TEST_BASE_URL || host === DODO_LIVE_BASE_URL,
-        `unexpected Dodo host baked into the bundle: ${host}`
-      );
+      assert.ok(ALLOWED_HOSTS.has(host), `unexpected Dodo host baked into the bundle: ${host}`);
     }
-    assert.ok(hosts.has(DODO_BASE_URL), 'the active licence base URL did not survive bundling');
+
+    // The active API base must be present. An unused constant is legitimately
+    // tree-shaken by esbuild, so absence of the other mode proves nothing.
+    assert.ok(
+      hosts.has(new URL(DODO_BASE_URL).host),
+      'the active licence base URL did not survive bundling'
+    );
+    assert.ok(
+      PRODUCT_URL === undefined || hosts.has(new URL(PRODUCT_URL).host),
+      'the checkout URL did not survive bundling'
+    );
+    // And the two modes are never mixed in a shipped build.
+    assert.equal(
+      hosts.has('test.dodopayments.com'),
+      hosts.has('test.checkout.dodopayments.com'),
+      'the API and checkout URLs are pointed at different Dodo modes'
+    );
   });
 });
