@@ -14,5 +14,9 @@ examples/**
 .api-env/**
 out/**
 .vscode-test/**
-.vscode-test.mjs
+.vscode-test*.mjs
 docs/**
+
+# Listing screenshot: the README links it by absolute URL from GitHub,
+# so shipping a copy inside the package would be dead weight.
+images/screenshot.png

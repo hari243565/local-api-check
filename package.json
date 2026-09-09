@@ -251,7 +251,8 @@
     "vsix": "npm run package && npm run check-secrets && vsce package --no-dependencies",
     "compile-tests": "tsc -p tsconfig.integration.json",
     "test:integration": "npm run compile && npm run compile-tests && node tools/seed-test-profile.js && vscode-test",
-    "test:all": "npm test && npm run test:integration"
+    "test:all": "npm test && npm run test:integration",
+    "screenshot": "npm run compile && npm run compile-tests && node tools/seed-test-profile.js --screenshot && vscode-test --config .vscode-test.screenshot.mjs"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

@@ -1,0 +1,35 @@
+### List todos
+GET {{base_url}}/todos/1
+Accept: application/json
+
+expect:
+  status: 200
+  json_has: ["id", "title"]
+
+### Create a post
+POST {{base_url}}/posts
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "title": "Ship the release notes",
+  "userId": 1
+}
+
+expect:
+  status: 201
+  json_has: ["id"]
+
+### Health check
+GET {{base_url}}/plain
+
+expect:
+  status: 200
+
+### Get user profile
+GET {{base_url}}/users/7
+Accept: application/json
+
+expect:
+  status: 200
+  json_has: ["id", "email"]

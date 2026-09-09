@@ -1,0 +1,5 @@
+{
+  "_comment": "Screenshot fixture. base_url points at the suite's local test server.",
+  "base_url": "http://localhost:39871",
+  "auth_token": "screenshot-fixture-token"
+}
