@@ -5,7 +5,7 @@ import type { LocalApiCheckApi } from '../../extension';
 import type { LicenseEntryResult } from '../../license';
 import { ACTIVATE_PATH, VALIDATE_PATH, type PostJson, type TransportResult } from '../../licenseApi';
 
-export const EXTENSION_ID = 'local-api-check-dev.local-api-check';
+export const EXTENSION_ID = 'voidforge.local-api-check';
 
 export const TEST_LICENSE_KEY = 'PRO-TEST-0000-1111-2222';
 export const TEST_INSTANCE_ID = 'lki_integration_test';

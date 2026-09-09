@@ -1,9 +1,9 @@
 {
   "name": "local-api-check",
   "displayName": "Local API Check",
-  "description": "Offline, git-native API testing for VS Code — write requests in plain .api files, run them with one click, turn any request into a pass/fail check. No account, no cloud sync.",
+  "description": "Offline API client for VS Code. Requests are plain .api files in your repo — send them in one click, or turn them into pass/fail checks. A Postman alternative with no account and no cloud sync.",
   "version": "0.1.0",
-  "publisher": "local-api-check-dev",
+  "publisher": "voidforge",
   "license": "MIT",
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -11,16 +11,17 @@
     "theme": "dark"
   },
   "keywords": [
+    "api client",
+    "offline api client",
+    "postman alternative",
+    "insomnia alternative",
+    "api testing",
+    "rest client",
+    "http client",
+    "offline",
     "api",
     "rest",
-    "http",
-    "testing",
-    "offline",
-    "postman alternative",
-    "http client",
-    "rest client",
-    "api testing",
-    "insomnia alternative"
+    "http"
   ],
   "engines": {
     "vscode": "^1.85.0"
