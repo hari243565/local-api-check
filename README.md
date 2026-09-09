@@ -3,6 +3,8 @@
 **Offline, git-native API testing for VS Code — no account, no cloud sync.**
 Write requests in a plain text file in your repo, click to send them, and turn any request into a pass/fail check that runs as a suite.
 
+![A .api file with Send Request and Run Check CodeLenses, and the output channel showing 3 passed, 1 failed](https://raw.githubusercontent.com/hari243565/local-api-check/main/images/screenshot.png)
+
 ## Why
 
 Your API requests are part of your codebase. They should live next to it, diff in code review, and branch with your feature work — not in a cloud workspace behind a login.
